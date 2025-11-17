@@ -1,7 +1,7 @@
 ---
 title: "BSMM-midterm"
 subtitle: "BSMM 8740 Fall 2025"
-author: "Prakash Bhusal"
+author: "Pratice"
 editor: visual
 format: html
 self-contained: true

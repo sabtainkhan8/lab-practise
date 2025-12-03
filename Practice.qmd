@@ -1,544 +1,191 @@
+✅ PART 1 — Multiple Choice (Q1–Q10)
+Q1. ARIMA — Purpose of the Integrated component (‘I’)
 
----
-title: "lab 9 - Monte Carlo Methods"
-subtitle: "BSMM 8740 Fall 2025"
-author: "Sabtain Ahmad Khan"
-format: html
-editor: visual
-self-contained: true
----
+✔ Correct Answer:
+To make the time series stationary through differencing
 
-## Introduction
+Q2. Purpose of k-means clustering
 
-In today's lab, you'll practice sampling from distributions and working with Markov chains.
+✔ Correct Answer:
+To partition data into k clusters based on similarity
 
-## Getting started
+Q3. What do confounders represent in DAGs?
 
--   To complete the lab, log on to **your** github account and then go to the class [GitHub organization](https://github.com/bsmm-8740-fall-2025) and find the **2025-lab-9-\[your github username\]** repository .
+✔ Correct Answer:
+Variables that influence both the exposure and the outcome
 
-    Create an R project using your **2025-lab-9-\[your github username\]** repository (remember to create a PAT, etc.) and add your answers by editing the `2025-lab-9.qmd` file in your repository.
+Q4. Specificity (TNR) of the classifier
 
--   When you are done, be sure to: **save** your document, **stage**, **commit** and [**push**]{.underline} your work.
+Given the binary confusion matrix used in this assignment:
 
-::: callout-important
-To access Github from the lab, you will need to make sure you are logged in as follows:
+TN = 34, FP = 12
+TNR = 34 / (34 + 12) = 0.739 ≈ 0.74
 
--   username: **.\\daladmin**
--   password: **Business507!**
+✔ Correct Answer: 0.74
 
-Remember to (create a PAT and set your git credentials)
+Q5. Purpose of exponential smoothing parameter (alpha)
 
--   create your PAT using `usethis::create_github_token()` ,
--   store your PAT with `gitcreds::gitcreds_set()` ,
--   set your username and email with
-    -   `usethis::use_git_config( user.name = ___, user.email = ___)`
-:::
+✔ Correct Answer:
+Controls how quickly the model adapts to recent data
 
-## Packages
+Q6. Purpose of an adjustment set in causal inference
 
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-# check if 'librarian' is installed and if not, install it
-if (! "librarian" %in% rownames(installed.packages()) ){
-  install.packages("librarian")
-}
-  
-# load packages if not already loaded
-librarian::shelf(expm, ggplot2, magrittr, tidyverse)
-theme_set(theme_bw(base_size = 18) + theme(legend.position = "top"))
-```
+✔ Correct Answers:
+To identify the minimum set of variables needed to block all confounding paths
 
-## Exercise 1: Markov Chains
+Q7. Disadvantage of lazy learners (e.g., k-NN)
 
-Here is a four-state Markov chain that could model customer loyalty for a subscription-based service, with one month between steps in the chain.
+✔ Correct Answer:
+Performance degrades with high-dimensional data
 
-[**States**]{.underline}:
+Q8. Number of open paths in the DAG
 
--   State A (New Customer): The customer has just signed up.
--   State B (Engaged Customer): The customer is actively using the service and seems satisfied.
--   State C (At-Risk Customer): The customer is showing signs of disengagement (e.g., reduced usage or negative feedback).
--   State D (Churned Customer): The customer has canceled their subscription.
+✔ Correct Answer: 2
+(The diagram contains two open backdoor paths.)
 
-[**Transition Probabilities**]{.underline}:
+Q9. When accuracy is misleading
 
--   From State A (New Customer), there’s a high chance the customer either becomes engaged (State B) or starts showing signs of disengagement (State C).
--   From State B (Engaged Customer), there’s a probability of remaining engaged or transitioning to at-risk (State C), and a smaller probability of churning (State D).
--   From State C (At-Risk Customer), the customer may either re-engage (return to State B) or churn (State D).
--   From State D (Churned Customer), it's possible the company might re-acquire the customer through marketing efforts, which would move them back to State A.
+✔ Correct Answer:
+When the dataset is highly imbalanced
 
-This type of Markov model can help businesses predict customer behavior, optimize marketing efforts, and focus on retention strategies.
+Q10. Naive assumption in Naive Bayes
 
-What is the probability that a customer that has [just signed up]{.underline} is [still a customer after 6 months]{.underline}?
+✔ Correct Answer:
+Features are conditionally independent given the class
 
-::: {#Q1 .callout-note appearance="simple" icon="false"}
-## YOUR ANSWER Q1:
+✅ PART 2
+Q11. Outcome regression + Adjustment sets
+✔ Unbiased regressions
 
-```{r}
-#| echo: true
-#| label: model customer loyalty dynamics using a Markov Chain
-# the transition matrix is
-P <- 
-  matrix(
-    c(0, 0.6, 0.4, 0,
-      0, 0.75, 0.25, 0,
-      0, 0.5, 0, 0.5,
-      0.3, 0, 0, 0.7
-      )
-    , nrow = 4, byrow = TRUE
-  )
+The true confounder in the D → Y relationship is W, because:
 
-# (1) use %^% from the expm package to compute the k-th power of a matrix (k = 6 months)
-P6 <- P %^% 6
+V → W → D → Y
+and W → Y
 
-# (2) starting from a new customer, sum the probabilities of the non-churned customer states after 6 steps
-pi0 <- c(1, 0, 0, 0)
-pi6 <- pi0 %*% P6
-sum(pi6[1:3])
+Thus, valid regressions:
 
+Y ~ D + W (lin_YW)
 
-```
+FWL-Residual regression (adjusting for W)
 
-The probability that a customer that has just signed up is still a customer after 6 months is **0.7485331. (74.85%)**
-:::
+❌ Incorrect model
 
-## Exercise 2: Markov Chains
+Y ~ D + V (lin_YV) → V is not a confounder once W is in the model
 
-A simpler customer churn model for each monthly period is as follows:
+✔ Valid Adjustment Sets
 
--   a current subscriber cancels their subscription with probability 0.2
--   a current non-subscriber starts their subscription with probability with probability 0.06
+{W}
 
-write the state transition matrix $\mathsf{P}_{i,j}$, and compute the [**stationary distribution**]{.underline} $\pi$ for this Markov Chain, confirming that $\pi\mathsf{P}=\pi$ and that the sum of the elements of $\pi$ equals $1.0$.
+{W, V} (valid but not minimal)
 
-What percent of customers remain once the chain has reached the steady state?
+Two-step OLS (FWL) coefficient on D
 
-::: {#Q2 .callout-note appearance="simple" icon="false"}
-## YOUR ANSWER Q2:
+Here is the complete correct code:
 
-```{r}
-#| echo: true
-#| label: build the state transition matrix for customer churn with 2 states, subscriber and non-subscriber
-# replace the placeholders '_' with the state transition probabilities
-P <-
-  matrix(
-    c(0.8, 0.2,     # subscriber -> subscriber, non-subscriber
-      0.06, 0.94    # non-subscriber -> subscriber, non-subscriber
-      )
-    , nrow = 2, byrow = TRUE
-  )
+# Step 1: residualize Y and D on W
+rY <- resid(lm(Y ~ W, data = data_obs))
+rD <- resid(lm(D ~ W, data = data_obs))
 
-```
+# Step 2: regress residualized Y on residualized D
+lin_FWL <- lm(rY ~ rD)
+broom::tidy(lin_FWL, conf.int = TRUE)
 
-```{r}
-#| echo: true
-#| label: calculate the stationary distribution between subscriber and non-subscriber for this model
-# compute transpose(I - P) and add a row of 1's to the bottom
-# call the resulting matrix A
-A <- rbind(t(diag(2) - P), c(1, 1))
-
-# create a vector called b with the # of elements equal to the number of rows of A
-# with elements all zero but the last one
-b <- c(0, 0, 1)
-
-# compute pi by solving (A x pi) = b using qr.solve
-pi <- qr.solve(A, b)
-
-# confirm (pi x P) = pi
-pi %*% P
-pi
-
-# confirm pi[1] + pi[2] == 1
-sum(pi)
-
-  
-
-```
-
-In the steady state, the probability of being a current customer is **0.231 (23.1%)**
-:::
-
-## Exercise 3: Acceptance probability
-
-We want to sample from the Poisson distribution $\mathbb{P}(X=x)\sim \lambda^xe^{-\lambda}/x!$ using a Metropolis Hastings algorithm.
-
-For the proposal we toss a fair coin and add or subtract 1 from $x$ to obtain $y$ as follows:
-
-$$
-q(y|x)=\begin{cases}
-\frac{1}{2} & x\ge1,\,y=x\pm1\\
-1 & x=0,\,y=1\\
-0 & \mathrm{otherwise}
-\end{cases}
-$$ show that the acceptance probability is
-
-$$
-\alpha(y|x)=\begin{cases}
-\min\left(1,\frac{\lambda}{x+1}\right) & x\ge1,\,y=x+1\\
-\min\left(1,\frac{x}{\lambda}\right) & x\ge2,\,y=x-1
-\end{cases}
-$$
-
-and $\alpha(1|0)=\min(1,\lambda/2)$, $\alpha(0|1)=\min(1,2/\lambda)$. NOTE: there are 4 cases to consider.
-
-::: {#Q3 .callout-note appearance="simple" icon="false"}
-## YOUR ANSWER Q3:
-
-We target the Poisson(λ) distribution:
-
-$$
-\pi(x) = \frac{\lambda^x e^{-\lambda}}{x!}, \qquad x=0,1,2,\dots
-$$
-
-The Metropolis–Hastings acceptance probability is:
-
-$$
-\alpha(y|x) = \min\left(1, \frac{\pi(y)\,q(x|y)}{\pi(x)\,q(y|x)} \right).
-$$
-
-The proposal kernel is:
-
-$$
-q(y|x) =
-\begin{cases}
-1/2, & x\ge 1,\; y=x\pm 1,\\
-1,   & x=0,\; y=1,\\
-0,   & \text{otherwise.}
-\end{cases}
-$$
-
-We evaluate the ratio case by case.
-
-------------------------------------------------------------------------
-
-### **Case 1: (x** \ge 1,; y = x+1)
-
-Proposal ratio:
-
-$$
-\frac{q(x|y)}{q(y|x)} = 1.
-$$
-
-Target ratio:
-
-$$
-\frac{\pi(x+1)}{\pi(x)}
-= \frac{\lambda}{x+1}.
-$$
-
-So,
-
-$$
-\alpha(y|x) = \min\left(1,\frac{\lambda}{x+1}\right).
-$$
-
-------------------------------------------------------------------------
-
-### **Case 2: (x** \ge 2,; y = x-1)
-
-Proposal ratio:
-
-$$
-\frac{q(x|y)}{q(y|x)} = 1.
-$$
-
-Target ratio:
-
-$$
-\frac{\pi(x-1)}{\pi(x)}
-= \frac{x}{\lambda}.
-$$
-
-Thus,
-
-$$
-\alpha(y|x) = \min\left(1,\frac{x}{\lambda}\right).
-$$
-
-------------------------------------------------------------------------
-
-### **Case 3: (x = 0,; y = 1)**
-
-Proposal ratio:
-
-$$
-\frac{q(0|1)}{q(1|0)} = \frac12.
-$$
-
-Target ratio:
-
-$$
-\frac{\pi(1)}{\pi(0)} = \lambda.
-$$
-
-Hence,
-
-$$
-\alpha(1|0) = \min\left(1,\frac{\lambda}{2}\right).
-$$
-
-------------------------------------------------------------------------
-
-### **Case 4: (x = 1,; y = 0)**
-
-Target ratio:
-
-$$
-\frac{\pi(0)}{\pi(1)} = \frac{1}{\lambda}.
-$$
-
-Thus,
-
-$$
-\alpha(0|1)
-= \min\left(1,\; 2 \cdot \frac{1}{\lambda} \right)
-= \min\left(1,\frac{2}{\lambda}\right).
-$$
-
-Proposal ratio:
-
-$$
-\frac{q(1|0)}{q(0|1)} = 2.
-$$
-
-Therefore, the acceptance probabilities are:
-
-$$
-\alpha(y|x)=
-\begin{cases}
-\min\left(1,\dfrac{\lambda}{x+1}\right), & x \ge 1,\; y=x+1,\\[6pt]
-\min\left(1,\dfrac{x}{\lambda}\right), & x \ge 2,\; y=x-1,\\[6pt]
-\min(1,\lambda/2), & (x,y)=(0,1),\\[6pt]
-\min(1,2/\lambda), & (x,y)=(1,0).
-\end{cases}
-$$
-:::
-
-## Exercise 4: Samples from Poisson pmf
-
-Given the following function for the acceptance probability
-
-```{r}
-#| label: define the acceptance probability function (see exerise 3) 
-alpha <- function(y,x, lambda){
-  if(x >= 1 & y == x+1){
-    min(1,lambda/(x+1))
-  }else if(x >= 2 & y == x-1){
-    min(1,x/lambda)
-  }else if(x == 0 & y == 1){
-   min(1,lambda/2)
-  }else{
-    min(1,2/lambda)
-  }
-}
-```
-
-1.  Write a MH algorithm to draw 2000 samples from a from a Poisson pmf with $\lambda = 20$ starting from $x_0=1$.
-
-2.  Compare the sample quantiles at probabilities **c(0.1,.25,0.5, 0.75, 0.9)** with the theoretical quantiles for the Poisson distribution (using the `qpois` function).
-
-::: {#Q4 .callout-note appearance="simple" icon="false"}
-## YOUR ANSWER Q4:
-
-```{r}
-#| label: sample from a Poisson(20) pmf, using a MH algorithm, then compare sampler quantiles with theoretical quantiles
-# MH algorithm drawing samples from a Poisson(20) pmf
+Q12. Spam Classification using XGBoost
+(1) Train/test split, recipe, XGBoost model
 set.seed(8740)
 
-# initialize
-n = 2000; x = 1; lambda = 20; samples = c(x, rep(NA, n-1))
+# split
+splits <- initial_split(spam_data, prop = 0.8, strata = type)
+train  <- training(splits)
+test   <- testing(splits)
 
-# MH sampling loop
-for(i in 2:n){
-  # proposal
-  if(x == 0){
-    y = 1
-  } else {
-    y = x + sample(c(-1,1), size = 1)  # x ± 1
-  }
-  
-  # acceptance probability
-  a = alpha(y, x, lambda)
-  
-  # accept/reject
-  if(runif(1) < a){
-    x = y
-  }
-  
-  samples[i] = x
-}
+# recipe
+default_recipe <- recipe(type ~ ., data = train)
 
-# comparison of quantiles between the samples and the theoretical
-probs = c(0.1, 0.25, 0.5, 0.75, 0.9)
-sample_q = quantile(samples, probs)
-theoretical_q = qpois(probs, lambda)
+# xgboost model
+default_model <- 
+  boost_tree(
+    trees = 1000,
+    mtry = 10,
+    tree_depth = 5,
+    learn_rate = 0.05,
+    loss_reduction = 0,
+    sample_size = 1
+  ) %>%
+  set_engine("xgboost") %>%
+  set_mode("classification")
 
-cbind(sample_q, theoretical_q)
+(2) Workflow → Fit → Test-set predictions
+default_workflow <- 
+  workflow() %>%
+  add_model(default_model) %>%
+  add_recipe(default_recipe)
 
-```
-:::
+lm_fit <- fit(default_workflow, data = train)
 
-## Exercise 5: A Loan Portfolio
+testing_results <- augment(lm_fit, new_data = test)
 
-Our client is a bank with both asset and liability products in retail bank industry. Most of the bank's assets are loans, and these loans generate the majority of the total revenue earned by the bank. Hence, it is essential for the bank to understand the proportion of loans that have a high likelihood to be paid in full and those which will finally become Bad loans.
+(3) ROC curve and Accuracy
+✔ ROC Curve
+testing_results %>%
+  roc_curve(type, .pred_spam) %>%
+  autoplot()
 
-All the loans that have been issued by the bank are classified into one of four categories/states :
+✔ Accuracy
+testing_results %>%
+  accuracy(type, .pred_class)
 
-1.  **Good Loans** : These are the loans which are in progress but are given to low risk customers. We expect most of these loans will be paid up in full with time.
-2.  **Risky loans** : These are also the loans which are in progress but are given to medium or high risk customers. We expect a good number of these customers will default.
-3.  **Bad loans** : The customer to whom these loans were given have already defaulted.
-4.  **Paid up loans** : These loans have already been paid in full.
+(4) Feature importance & most important feature
+booster <- (lm_fit %>% extract_fit_parsnip())$fit
 
-Your research has suggested the following state transition matrix for the bank loans
+importance_matrix <- xgboost::xgb.importance(model = booster)
+importance_matrix
 
-```{r}
-#| label: define the transition matrix for our loan portfolio
-# the 1-year state transition matrix for loans is:
-P <- 
-  matrix(
-    c(0.7, 0.05, 0.03, 0.22,
-      0.05, 0.55, 0.35, 0.05,
-      0, 0, 1, 0, 
-      0, 0, 0, 1
-      )
-    , nrow =4, byrow = TRUE
-  )
-```
+✔ Most important feature:
 
-Answer the following questions, given that the bank's records indicate 60% of the loans on the books are 'good loans' and 40% are 'risky loans'. (*use this as the initial state*)
+Likely: char_freq_; (semicolon) or word_freq_free
+(Exact answer depends on importances, but these are consistently #1 in the UCI dataset.)
 
-::: {#Q5 .callout-note appearance="simple" icon="false"}
-## YOUR ANSWER Q5:
+Q13. step_lag()
+(1) Purpose of step_lag()
 
-```{r}
-#| label: use the transition matrix to predict the composition of the loan portfolio
-# describe the current loan portfolio by state at the end of one year.
+✔ Correct Answer:
+step_lag() creates lagged versions of numeric variables for time-series modeling.
 
-# initial state vector: (Good, Risky, Bad, Paid)
-pi0 <- c(0.6, 0.4, 0, 0)
+(2) Example + first rows description
+data <- data.frame(
+  week = as.Date("2025-01-01") + 0:5,
+  value = c(100, 120, 130, 125, 140, 150),
+  city = "Toronto"
+)
 
-# after 1 year
-pi1 <- pi0 %*% P
-pi1
+rec <- recipe(value ~ week + city, data = data) %>%
+  step_lag(value, lag = 1)
 
-# describe the current loan portfolio by state at the end of two years.
+lagged_data <- prep(rec) %>% bake(new_data = data)
+lagged_data
 
-# after 2 years
-P2  <- P %^% 2
-pi2 <- pi0 %*% P2
-pi2
+✔ Description
 
+A new column value_lag1 appears
 
-```
+First row: NA (no previous value)
 
-```{r}
-#| label: predict the pct of loans that start as good and are paid in 20 yrs
-# What percentage of good loans are paid in full after 20 years
+Row 2: lag = 100
 
-P20 <- P %^% 20
-prob_good_paid_20 <- P20[1, 4]        # row = Good, col = Paid
-prob_good_paid_20 * 100
+Row 3: lag = 120
 
+Row 4: lag = 130
 
-```
+etc.
 
-**76.51** percent of good loans are paid in full after 20 years
+Q14. Causal critique of the parachute study
 
-```{r}
-#| label: predict the pct of loans that start as risky and are paid in 20 yrs
-# What percentage of risky loans are paid in full after 20 years
+✔ Correct Answer:
+The study cannot estimate a causal effect because:
 
-P20 <- P %^% 20
-prob_risky_paid_20 <- P20[2, 4]       # row = Risky, col = Paid
-prob_risky_paid_20 * 100
+The treatment groups do not differ on meaningful exposure (all jumps are from safe, near-zero altitude).
 
+The outcome (death/injury) has zero probability, violating positivity.
 
-```
-
-**19.59** percent of risky loans are paid in full after 20 years
-:::
-
-## Exercise 6: A New Covariance Calculation
-
-Given $\bar{a}\equiv\frac{1}{T}\sum_{t=1}^T a_t$ (the mean) and sequences $\left\{a_t\right\}_{t=1}^T$ and $\left\{b_t\right\}_{t=1}^T$, we have the following calculation for the population covariance:
-
-$$
-\frac{1}{T}\sum_{t=1}^T(a_t-\bar{a})(b_t-\bar{b})
-$$
-
-Statisticians have long interpreted this as a measure of how much the measurements $a_t$ and $b_t$ co-vary. If $a_t=b_t$ then this formula calculates the population variance of $a_t$, a measure of the dispersion or spread of the values of $a_t$.
-
-Some data scientists have suggested that this formula does not measure variation at all, since self-evidently there are no differences in the formula, other than mean differences, that would capture the variation.
-
-Instead, data scientists have suggested that the following calculation, which sums all possible differences, should be use to estimate co-variation. With $\Delta_k a_t \equiv a_{t+k}-a_t$ (the $k^{th}$ difference) the co-variation is calculated as:
-
-$$\frac{1}{T^2}\sum_{k=1}^{T-1}\sum_{t=1}^{T-k} \Delta_k a_t \Delta_k b_t$$
-
-Use samples of 10, 20, 50, 100, 200, 500, 1000, 2000, 5000 from $a\sim\mathcal{N}(1,1)$ and $b\sim a+\mathcal{N}(4,2)$, and calculate the covariance both ways, putting the result into a table.
-
-Confirm that the calculation below computes the covariance both ways. How do the calculations compare?
-
-::: {#Q6 .callout-note appearance="simple" icon="false"}
-## YOUR ANSWER Q6:
-
-```{r}
-#| label: covariance_comparison
-# NOTE: (dplyr::lead(a,k) - a) is key to this calculation
-set.seed(8740)
-
-count <- c(10,20,50)
-
-tibble::tibble(
-  T = c(count, count*10, count*100)
-) |>
-  dplyr::mutate(
-    result =
-      purrr::map(
-        T,                                            # a vector of sample counts
-        \(t){                                         # a function for each count t
-
-          a <- rnorm(n = t, mean = 1, sd = 1)         # t samples from N(1,1) -> a
-          b <- a + rnorm(n = t, mean = 4, sd = 2)     # t samples from a + N(4,2) -> b
-
-          tibble::tibble(                             # store the calculations in a tibble
-
-            cov = mean((a - mean(a)) * (b - mean(b))),  # covariance the usual way
-
-            alt_cov =
-              1:(t-1) |>                              # differences 1 to (t-1)
-              purrr::map_vec(
-                \(k){                                  # a function for each difference k
-
-                  ( (dplyr::lead(a, k) - a) *
-                    (dplyr::lead(b, k) - b) ) |>
-                    sum(na.rm = TRUE)                  # calculate the terms in the inner sum
-
-                }
-              ) |>
-              sum(na.rm = TRUE) / (t * t)              # sum divided by count^2
-
-          )                                            # end: a tibble with two entries
-        }
-      )
-  ) |>
-  tidyr::unnest(result)                                # unnest the calculations
-
-
-
-```
-
-How do the two covariance calculations compare:
-
-**The two approaches yield nearly indistinguishable covariance estimates, showing virtually no difference across all sample sizes. As T grows larger, their results align even more closely, ultimately converging to the point where any residual discrepancies are practically insignificant.**
-:::
-
-::: render-commit-push
-You're done and ready to submit your work! **Save**, **stage**, **commit**, and **push** all remaining changes. You can use the commit message "Done with Lab 6!" , and make sure you have committed and pushed all changed files to GitHub (your Git pane in RStudio should be empty) and that **all** documents are updated in your repo on GitHub.
-:::
-
-## Grading
-
-Total points available: 30 points.
-
-![](images/rubric_lab_9.png){fig-align="center" width="600"}
+Therefore the study provides no causal information about parachute effectiveness.

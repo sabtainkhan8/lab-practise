@@ -1,191 +1,141 @@
-✅ PART 1 — Multiple Choice (Q1–Q10)
-Q1. ARIMA — Purpose of the Integrated component (‘I’)
-
-✔ Correct Answer:
-To make the time series stationary through differencing
-
-Q2. Purpose of k-means clustering
-
-✔ Correct Answer:
-To partition data into k clusters based on similarity
-
-Q3. What do confounders represent in DAGs?
-
-✔ Correct Answer:
-Variables that influence both the exposure and the outcome
-
-Q4. Specificity (TNR) of the classifier
-
-Given the binary confusion matrix used in this assignment:
-
-TN = 34, FP = 12
-TNR = 34 / (34 + 12) = 0.739 ≈ 0.74
-
-✔ Correct Answer: 0.74
-
-Q5. Purpose of exponential smoothing parameter (alpha)
-
-✔ Correct Answer:
-Controls how quickly the model adapts to recent data
-
-Q6. Purpose of an adjustment set in causal inference
-
-✔ Correct Answers:
-To identify the minimum set of variables needed to block all confounding paths
-
-Q7. Disadvantage of lazy learners (e.g., k-NN)
-
-✔ Correct Answer:
-Performance degrades with high-dimensional data
-
-Q8. Number of open paths in the DAG
-
-✔ Correct Answer: 2
-(The diagram contains two open backdoor paths.)
-
-Q9. When accuracy is misleading
-
-✔ Correct Answer:
-When the dataset is highly imbalanced
-
-Q10. Naive assumption in Naive Bayes
-
-✔ Correct Answer:
-Features are conditionally independent given the class
-
-✅ PART 2
-Q11. Outcome regression + Adjustment sets
-✔ Unbiased regressions
-
-The true confounder in the D → Y relationship is W, because:
-
-V → W → D → Y
-and W → Y
-
-Thus, valid regressions:
-
-Y ~ D + W (lin_YW)
-
-FWL-Residual regression (adjusting for W)
-
-❌ Incorrect model
-
-Y ~ D + V (lin_YV) → V is not a confounder once W is in the model
-
-✔ Valid Adjustment Sets
-
-{W}
-
-{W, V} (valid but not minimal)
-
-Two-step OLS (FWL) coefficient on D
-
-Here is the complete correct code:
-
-# Step 1: residualize Y and D on W
-rY <- resid(lm(Y ~ W, data = data_obs))
-rD <- resid(lm(D ~ W, data = data_obs))
-
-# Step 2: regress residualized Y on residualized D
-lin_FWL <- lm(rY ~ rD)
-broom::tidy(lin_FWL, conf.int = TRUE)
-
-Q12. Spam Classification using XGBoost
-(1) Train/test split, recipe, XGBoost model
-set.seed(8740)
-
-# split
-splits <- initial_split(spam_data, prop = 0.8, strata = type)
-train  <- training(splits)
-test   <- testing(splits)
-
-# recipe
-default_recipe <- recipe(type ~ ., data = train)
-
-# xgboost model
-default_model <- 
-  boost_tree(
-    trees = 1000,
-    mtry = 10,
-    tree_depth = 5,
-    learn_rate = 0.05,
-    loss_reduction = 0,
-    sample_size = 1
-  ) %>%
-  set_engine("xgboost") %>%
-  set_mode("classification")
-
-(2) Workflow → Fit → Test-set predictions
-default_workflow <- 
-  workflow() %>%
-  add_model(default_model) %>%
-  add_recipe(default_recipe)
-
-lm_fit <- fit(default_workflow, data = train)
-
-testing_results <- augment(lm_fit, new_data = test)
-
-(3) ROC curve and Accuracy
-✔ ROC Curve
-testing_results %>%
-  roc_curve(type, .pred_spam) %>%
-  autoplot()
-
-✔ Accuracy
-testing_results %>%
-  accuracy(type, .pred_class)
-
-(4) Feature importance & most important feature
-booster <- (lm_fit %>% extract_fit_parsnip())$fit
-
-importance_matrix <- xgboost::xgb.importance(model = booster)
-importance_matrix
-
-✔ Most important feature:
-
-Likely: char_freq_; (semicolon) or word_freq_free
-(Exact answer depends on importances, but these are consistently #1 in the UCI dataset.)
-
-Q13. step_lag()
-(1) Purpose of step_lag()
-
-✔ Correct Answer:
-step_lag() creates lagged versions of numeric variables for time-series modeling.
-
-(2) Example + first rows description
-data <- data.frame(
-  week = as.Date("2025-01-01") + 0:5,
-  value = c(100, 120, 130, 125, 140, 150),
-  city = "Toronto"
-)
-
-rec <- recipe(value ~ week + city, data = data) %>%
-  step_lag(value, lag = 1)
-
-lagged_data <- prep(rec) %>% bake(new_data = data)
-lagged_data
-
-✔ Description
-
-A new column value_lag1 appears
-
-First row: NA (no previous value)
-
-Row 2: lag = 100
-
-Row 3: lag = 120
-
-Row 4: lag = 130
-
-etc.
-
-Q14. Causal critique of the parachute study
-
-✔ Correct Answer:
-The study cannot estimate a causal effect because:
-
-The treatment groups do not differ on meaningful exposure (all jumps are from safe, near-zero altitude).
-
-The outcome (death/injury) has zero probability, violating positivity.
-
-Therefore the study provides no causal information about parachute effectiveness.
+Part 1 — MCQ answers (only the single correct statement kept)
+Q-1 (propensity-score matching)
+Matching balances the observed covariates, but hidden confounding can still bias the estimated treatment effect.
+Q-2 (Metropolis–Hastings mixing)
+Increase the proposal variance $\sigma^2$.
+Q-3 (M-bias / collider parents)
+Collect data on either of the parent nodes of the collider.
+Q-4 (extreme IPW weights)
+Truncate the extreme weights.
+(Using stabilized weights is also common and reasonable, but truncation of extreme weights is the single best practical fix among the listed options.)
+Q-5 (DAG with pre-treatment X)
+$X_i$ must be included in the adjustment set because failing to condition on it leaves open a back-door path from $A$ to $Y$.
+Q-6 (rejection sampling with 0.001 acceptance)
+Use a different proposal distribution that better matches the target.
+Q-7 (DiD pre-trends parallel at different levels)
+The analysis is valid as level differences don't violate the key assumption.
+(Parallel trends refers to changes over time — level differences are fine.)
+Q-8 (state transition matrix P)
+P is time homogeneous.
+(Explanation: the given matrix is a fixed transition matrix — that implies time-homogeneous transitions. It is not irreducible (there are absorbing states), not aperiodic in all communicating classes, etc.)
+Q-9 (Double Machine Learning theoretical basis)
+The Central Limit Theorem
+(DML relies on sample-splitting / orthogonalization and asymptotic normality — CLT underpins the asymptotic distribution results. The Frisch–Waugh–Lovell theorem is relevant in partialling out but the key asymptotic justification for inference is CLT.)
+Q-10 (minimal adjustment set in a DAG)
+The smallest set of variables needed to block all backdoor paths.
+Part 2 — Long answers and code
+Q-11 — Expected principal returned at maturity (5 years)
+Worked result (numeric):
+After 10 six-month steps (5 years = 10 half-years), the probability mass in default is approximately 0.4586127, so the expected fraction of principal returned is
+1
+−
+0.6
+×
+0.4586127
+≈
+0.7248324
+1−0.6×0.4586127≈0.7248324.
+For $1,000,000 face value, the expected principal returned ≈ $724,832.37.
+Below is an R chunk that reproduces this calculation (matrix power of the 6-month transition matrix raised to the 10th power):
+# Q11: compute expected principal returned after 5 years (10 half-year steps)
+
+# transition matrix (rows: I, J, D)
+P <- matrix(c(
+  0.90, 0.05, 0.05,
+  0.10, 0.80, 0.10,
+  0.00, 0.00, 1.00
+), nrow = 3, byrow = TRUE)
+
+# initial distribution: 0.9 I, 0.1 J, 0 D
+pi0 <- c(0.9, 0.1, 0.0)
+
+# number of half-year steps (5 years = 10 half-years)
+n_steps <- 10
+
+# raise P to the 10th power
+P_n <- P %^% n_steps   # requires package 'expm' for matrix power
+
+# distribution after n steps
+pi_n <- pi0 %*% P_n
+pi_n <- as.numeric(pi_n)
+
+# probability of default at maturity
+p_default <- pi_n[3]
+
+# expected fraction returned: 1 if not default, 0.4 if default
+expected_fraction <- (1 - p_default) * 1 + p_default * 0.4
+expected_principal <- 1e6 * expected_fraction
+
+# print results
+print(sprintf("Distribution after %d steps (I, J, D): %s", n_steps, paste(round(pi_n,6), collapse = ", ")))
+print(sprintf("Probability of default = %.6f", p_default))
+print(sprintf("Expected fraction returned = %.6f", expected_fraction))
+print(sprintf("Expected principal returned = $%.2f", expected_principal))
+If you run that R code (you need expm for %^%) you should get the numeric answer shown above: $724,832.37 (approx.).
+Q-12 — Suggest at least one potential confounder (Guardian study figure)
+Because I don’t have full figure text here, I’ll give a general, commonly relevant confounder and explanation you can adapt to the specific reported effect.
+Suggested confounder: Socioeconomic status (SES).
+Why SES is a confounder: SES is associated with both the exposure and the outcome in many university-related observational studies. For example, if the reported finding is that students who do X have better outcomes, SES can influence whether a student engages in X (access to resources, time, extracurricular opportunities) and independently influence the outcome (grades, well-being, employment prospects). That makes SES a confounder: it creates a spurious association unless you adjust for it.
+(Other common confounders to consider: prior academic ability / prior grades, age, mental health status, hours worked per week, or access to campus resources — pick the one most relevant to the specific claim in the figure and justify similarly.)
+Q-13 — Panel data: fit baseline linear model and fixed effects DiD; compare R²
+Below is R code that follows your skeleton and fits:
+(1) baseline linear model m_lm (management model), and
+(2) DiD with firm and sector fixed effects did_fe_cov (using fixest::feols),
+then prints the R² for both and the ratio (baseline R² divided by FE model R²).
+Run this in your R session where data/panel.csv exists.
+# Q13: fixed effects DiD comparison
+library(readr)
+library(dplyr)
+library(fixest)
+
+panel <- readr::read_csv("data/panel.csv", show_col_types = FALSE) %>%
+  mutate(firm_id = paste0("firm_", firm_id),
+         sector = as.factor(sector),
+         year = as.factor(year))
+
+# (1) management baseline with covariates
+m_lm <- fixest::feols(sales ~ treated * post + size + sector + year, data = panel)
+
+# (2) sector + firm_id fixed effects DiD with covariates
+# include firm_id and sector as fixed effects; we keep year and size as covariates
+did_fe_cov <- fixest::feols(sales ~ treated * post + size + year | firm_id + sector, data = panel)
+
+# (3) compare the models (table)
+fixest::etable(m_lm, did_fe_cov)
+
+# extract R^2 values and compute ratio
+r2_baseline <- summary(m_lm)$r.squared
+r2_fe <- summary(did_fe_cov)$r.squared
+
+cat(sprintf("Baseline R^2 = %.4f\nFixed-effects R^2 = %.4f\n", r2_baseline, r2_fe))
+cat(sprintf("The R^2 of the baseline is %.3f times that of the fixed effects model.\n", r2_baseline / r2_fe))
+Interpretation / next steps:
+Run the above; it will print both models’ R² and the ratio asked for. If you want the adjusted R² instead, extract summary(...)$adj.r.squared. If the data are very unbalanced or there are few within-firm time points, watch out: fixed effects can absorb a lot of variation and R² can change substantially.
+ANSWER FOR QUESTION 14
+Difference-in-Difference (DiD) Analysis Code
+# Read the data
+dat <- readr::read_csv('data/store_sales.csv', show_col_types = FALSE)
+
+# Create treatment and post variables if not already included
+# (Assuming dataset has columns: sales, store (treated/control), month_rel)
+dat <- dat %>%
+  mutate(
+    treated = ifelse(store == "treated", 1, 0),
+    post = ifelse(month_rel >= 0, 1, 0),
+    did = treated * post
+  )
+
+# Run the DiD regression
+did_model <- lm(sales ~ treated * post, data = dat)
+
+summary(did_model)
+Extract the DiD Treatment Effect
+# The DiD estimate is the coefficient of treated:post
+did_effect <- coef(did_model)["treated:post"]
+did_effect
+✅ How to Write the Final Answer in Your Assignment
+After you run the above code, R will return a number for:
+treated:post
+This value is the additive effect of the display refresh on monthly sales.
+Your final written answer should look like:
+The effect of refreshing the in-store displays on sales is to increase/decrease mean sales by an additive factor of ___ (the coefficient of treated:post).

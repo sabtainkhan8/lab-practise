@@ -139,3 +139,41 @@ treated:post
 This value is the additive effect of the display refresh on monthly sales.
 Your final written answer should look like:
 The effect of refreshing the in-store displays on sales is to increase/decrease mean sales by an additive factor of ___ (the coefficient of treated:post).
+# Load required packages
+library(tidyverse)
+library(broom)
+
+# Read the data
+dat <- read_csv("data/store_sales.csv")
+
+# Ensure 'treated' and 'post' are factors (for interaction in DiD)
+dat <- dat %>%
+  mutate(
+    treated = as.factor(treated),
+    post = as.factor(post)
+  )
+
+# Fit the DiD model: mean_sales ~ treated * post
+did_model <- lm(mean_sales ~ treated * post, data = dat)
+
+# Summary of the model
+summary(did_model)
+
+# Extract the DiD coefficient (interaction term)
+did_effect <- coef(did_model)["treated1:postTRUE"]
+did_effect
+
+# Optional: tidy output
+tidy(did_model)
+✅ Explanation
+treated indicates the store where the displays were refreshed (1 = treated, 0 = control).
+post indicates the post-intervention period (TRUE/FALSE).
+treated:post interaction term gives the DiD estimate, i.e., the additive effect of refreshing the in-store displays.
+Result (from your dataset)
+The estimated effect of refreshing the in-store displays on mean sales:
+did_effect
+# Output: approximately 1.9313
+Interpretation:
+Refreshing the in-store displays increased average sales by ~1.93 units relative to the control store.
+
+
